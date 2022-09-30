@@ -6,9 +6,7 @@ use PhpIpCam\ImageFromUpstreamCameraExtractor;
 $imageFromUpstreamCameraExtractor = new ImageFromUpstreamCameraExtractor('tcp://192.168.42.60', 4747, '/video?1920x1080', null, null);
 
 try {
-    //file_put_contents("php://stdout", "\nRequested: ---------------------");
     $img = $imageFromUpstreamCameraExtractor->getImageFromUpstreamCamera();
-    echo $imageFromUpstreamCameraExtractor->getLastDebugMessage();
 } catch (Exception $ex) {
     echo $ex->getMessage();
 }

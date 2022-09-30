@@ -4,6 +4,8 @@ namespace PhpIpCam;
 
 class ImageFromUpstreamCameraExtractor
 {
+    private const BOUNDARY_START_DEFINITION_STRING = 'Content-Type: multipart/x-mixed-replace;boundary=';
+
     private string $host;
     private int $port;
     private string $url;
@@ -27,7 +29,9 @@ class ImageFromUpstreamCameraExtractor
     public function getImageFromUpstreamCamera()
     {
         $this->debugMessage("----------------------------- getImageFromUpstreamCamera started -------------------");
-
+        $whileLoopCounter = 0;
+        $boundaryStart = 0;
+        $boundaryEnd = 0;
         $boundaryIn = null;
         //filepointer for reading from upstream webcam
         $fp = false;
@@ -87,37 +91,42 @@ class ImageFromUpstreamCameraExtractor
 
         // Read data from upstream camera, return single picture:
         while (!feof($fp)) {
+            $whileLoopCounter++;
             $buffer .= fgets($fp);
             $part = $buffer;
 
             // learn boundary string
             if (!$boundaryIn) {
-                $boundaryStart = strpos($buffer, 'Content-Type: multipart/x-mixed-replace; boundary=');
+                $boundaryStart = strpos($buffer, self::BOUNDARY_START_DEFINITION_STRING);
 
-                if ($boundaryStart === false) {
-                    $this->debugMessage("boundaryStart not found.");
-                    $this->debugMessage($buffer);
-
+                if (!$boundaryStart) {
+                    $this->debugMessage("$whileLoopCounter) boundaryStart not found.");
                     continue;
                 }
 
-                $boundaryStart = $boundaryStart + strlen('Content-Type: multipart/x-mixed-replace; boundary=');
+                $boundaryStart = $boundaryStart + strlen(self::BOUNDARY_START_DEFINITION_STRING);
                 $boundaryEnd = strpos($buffer, "\r\n", $boundaryStart);
 
                 if ($boundaryEnd === false) {
+                    $this->debugMessage("$whileLoopCounter) boundaryEnd is false.");
                     continue;
                 }
 
                 if ($boundaryStart >= $boundaryEnd) {
+                    $this->debugMessage("$whileLoopCounter) boundaryStart >= boundaryEnd.");
                     continue;
                 }
 
                 $boundaryIn = substr($buffer, $boundaryStart, $boundaryEnd - $boundaryStart);
 
-                $this->debugMessage("found boundary $boundaryIn");
+                $this->debugMessage("$whileLoopCounter) found boundary $boundaryIn");
             }
 
-            $this->debugMessage("boundaryIn defined.");
+            // Debug:
+            $debugData = fopen('Data/data_' . $whileLoopCounter . '.txt', 'w+');
+            fwrite($debugData, $buffer);
+            fclose($debugData);
+            $this->debugMessage("$whileLoopCounter) boundaryIn=$boundaryIn; boundaryStart=$boundaryStart; boundaryEnd=$boundaryEnd.");
 
             //extract single JPEG frame, alternatively we could also search EOI, SOI markers
             $part = substr($part, strpos($part, "--$boundaryIn") + strlen("--$boundaryIn"));
@@ -138,14 +147,6 @@ class ImageFromUpstreamCameraExtractor
         }
 
         return false;
-    }
-
-    /**
-     * @return string
-     */
-    public function getLastDebugMessage(): string
-    {
-        return $this->lastDebugMessage;
     }
 
     /**
