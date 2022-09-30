@@ -160,3 +160,4 @@ class ImageFromUpstreamCameraExtractor
         file_put_contents("php://stdout", "\n$string");
     }
 }
+// https://gist.github.com/megasaturnv/81279fca49f2f34b42e77815c9bb1eb8
