@@ -1,9 +1,11 @@
 <?php
+require_once('PhpIpCam/JpegSegment.php');
 require_once('PhpIpCam/ImageFromUpstreamCameraExtractor.php');
 
 use PhpIpCam\ImageFromUpstreamCameraExtractor;
 
-$imageFromUpstreamCameraExtractor = new ImageFromUpstreamCameraExtractor('tcp://192.168.42.60', 4747, '/video?1920x1080', null, null);
+//$imageFromUpstreamCameraExtractor = new ImageFromUpstreamCameraExtractor('tcp://192.168.42.60', 4747, '/video?1920x1080', null, null);
+$imageFromUpstreamCameraExtractor = new ImageFromUpstreamCameraExtractor('tcp://192.168.1.250', 4747, '/video?1920x1080', null, null);
 
 try {
     $img = $imageFromUpstreamCameraExtractor->getImageFromUpstreamCamera();
