@@ -5,6 +5,7 @@ namespace PhpIpCam;
 class ImageFromUpstreamCameraExtractor
 {
     private const BOUNDARY_START_DEFINITION_STRING = 'Content-Type: multipart/x-mixed-replace;boundary=';
+    private const SOI = "\xFF\xD8";
 
     private string $host;
     private int $port;
@@ -89,6 +90,8 @@ class ImageFromUpstreamCameraExtractor
 
         $this->debugMessage("Begin read data from upstream camera and return single picture.");
 
+        //return $this->fromStream($fp);
+
         // Read data from upstream camera, return single picture:
         while (!feof($fp)) {
             $whileLoopCounter++;
@@ -123,15 +126,34 @@ class ImageFromUpstreamCameraExtractor
             }
 
             // Debug:
+            /*
             $debugData = fopen('Data/data_' . $whileLoopCounter . '.txt', 'w+');
             fwrite($debugData, $buffer);
             fclose($debugData);
+            */
+
+            /*
+            // Read the first two characters
+            $data = fread($fileHandle, 2);
+
+            // Check that the first two characters are 0xFF 0xDA (SOI - Start of image)
+            if ($data !== self::SOI) {
+                throw new \Exception('Could not find SOI, invalid JPEG file.');
+            }
+            */
+
             $this->debugMessage("$whileLoopCounter) boundaryIn=$boundaryIn; boundaryStart=$boundaryStart; boundaryEnd=$boundaryEnd.");
 
-            //extract single JPEG frame, alternatively we could also search EOI, SOI markers
+            // Extract single JPEG frame, alternatively we could also search EOI, SOI markers:
             $part = substr($part, strpos($part, "--$boundaryIn") + strlen("--$boundaryIn"));
             $part = trim(substr($part, strpos($part, "\r\n\r\n")));
             $part = substr($part, 0, strpos($part, "--$boundaryIn"));
+
+            // To avoid infinite loop, interrupt:
+            if ($whileLoopCounter > 2000) {
+                $this->debugMessage("$whileLoopCounter) Infinite loop protection invoked.");
+                return false;
+            }
 
             //substr returns an empty string if the string could not be extracted
             //an image should not be smaller than this, so skip if too small
@@ -144,6 +166,85 @@ class ImageFromUpstreamCameraExtractor
 
             //return a single image
             return $part;
+        }
+
+        return false;
+    }
+
+    /**
+     * Load a JPEG from a stream.
+     *
+     * @param resource $fileHandle
+     * @param string   $filename
+     *
+     * @return mixed
+     * @throws \Exception
+     */
+    public function fromStream($fileHandle, $filename = null)
+    {
+        try {
+            // Read the first two characters
+            $data = fread($fileHandle, 2);
+
+            // Check that the first two characters are 0xFF 0xDA (SOI - Start of image)
+            if ($data !== self::SOI) {
+                throw new \Exception('Could not find SOI, invalid JPEG file.');
+            }
+
+            // Read the next two characters
+            $data = fread($fileHandle, 2);
+
+            // Check that the third character is 0xFF (Start of first segment header)
+            if ($data[0] != "\xFF") {
+                throw new \Exception('No start of segment header character, JPEG probably corrupted.');
+            }
+
+            $segments = [];
+            $imageData = null;
+
+            // Cycle through the file until, either an EOI (End of image) marker is hit or end of file is hit
+            while (($data[1] != "\xD9") && (!feof($fileHandle))) {
+                // Found a segment to look at.
+                // Check that the segment marker is not a restart marker, restart markers don't have size or data
+                if ((ord($data[1]) < 0xD0) || (ord($data[1]) > 0xD7)) {
+                    $decodedSize = unpack('nsize', fread($fileHandle, 2)); // find segment size
+
+                    $segmentStart = ftell($fileHandle); // segment start position
+                    $segmentData = fread($fileHandle, $decodedSize['size'] - 2); // read segment data
+                    $segmentType = ord($data[1]);
+
+                    $segments[] = new JpegSegment($segmentType, $segmentStart, $segmentData);
+                }
+
+                // If this is a SOS (Start Of Scan) segment, then there is no more header data, the image data follows
+                if ($data[1] == "\xDA") {
+                    // read the rest of the file, reading 1mb at a time until EOF
+                    $compressedData = '';
+                    do {
+                        $compressedData .= fread($fileHandle, 1048576);
+                    } while (!feof($fileHandle));
+
+                    // Strip off EOI and anything after
+                    $eoiPos = strpos($compressedData, "\xFF\xD9");
+                    $imageData = substr($compressedData, 0, $eoiPos);
+
+                    break; // exit loop as no more headers available.
+                } else {
+                    // Not an SOS - Read the next two bytes - should be the segment marker for the next segment
+                    $data = fread($fileHandle, 2);
+
+                    // Check that the first byte of the two is 0xFF as it should be for a marker
+                    if ($data[0] != "\xFF") {
+                        throw new \Exception('No FF found, JPEG probably corrupted.');
+                    }
+                }
+            }
+
+            //return new self($imageData, $segments, $filename);
+            return $imageData;
+
+        } finally {
+            fclose($fileHandle);
         }
 
         return false;
