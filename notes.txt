@@ -1,0 +1,450 @@
+            // Debug:
+            /*
+            $debugData = fopen('Data/data_' . $whileLoopCounter . '.txt', 'w+');
+            fwrite($debugData, $buffer);
+            fclose($debugData);
+            */
+
+            /*
+            // Read the first two characters
+            $data = fread($fileHandle, 2);
+
+            // Check that the first two characters are 0xFF 0xDA (SOI - Start of image)
+            if ($data !== self::SOI) {
+                throw new \Exception('Could not find SOI, invalid JPEG file.');
+            }
+            */
+
+//            // Note our use of ===.  Simply == would not work as expected
+//            // because the position of 'a' was the 0th (first) character.
+//            if ($pos === false) {
+//                //echo "The string '$findme' was not found in the string '$mystring'";
+//            } else {
+//                //echo "The string '$findme' was found in the string '$mystring'";
+//                //echo " and exists at position $pos";
+//                $this->debugMessage("$whileLoopCounter) found " . self::SOI . " position: $pos.");
+//            }
+
+
+// PHP Fatal error:  Maximum execution time of 30 seconds exceeded in C:\Projects\php_ip_cam\PhpIpCam\ImageFromUpstreamCameraExtractor.php on line 160
+
+/*
+$url ="http://192.168.42.60/video?1920x1080";
+$port="4747";
+$fh = fopen("C:\Projects\php_ip_cam\data.jpg", "w") or die($php_errormsg);
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+//curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
+curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_ALL);
+curl_setopt($ch, CURLOPT_PORT, $port);
+curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+curl_setopt($ch, CURLOPT_FILE, $fh);
+$success = curl_exec($ch);
+if (!$success) print "<br><B>Error!!</b><br>";
+$output = curl_exec($ch);
+$info = curl_getinfo($ch);
+curl_exec($ch);
+curl_close($ch);
+*/
+
+/*
+const HOST = "tcp://192.168.42.60";
+const PORT = "4747";
+const URL  = "/video?1920x1080";
+
+// Establish regular connection to upstream camera
+$fp = @fsockopen(HOST, PORT, $errno, $errstr, ini_get("default_socket_timeout"));
+
+$out = "GET ".URL." HTTP/1.1\r\n";
+$out .= "Host: $host\r\n";
+$out .= "\r\n";
+$result = fwrite($fp, $out);
+
+if($result === false) {
+	throw new Exception("Could not fwrite to upstream camera");
+	return false;
+}
+
+fclose($fs);
+*/
+
+/*
+$content = file_get_contents('http://192.168.42.60:4747/cam/1/frame.jpg');
+file_put_contents('C:\Projects\php_ip_cam\data.jpg', $content);
+*/
+/*
+//$host = "tls://192.168.42.60";
+$host = "tcp://192.168.42.60";
+$port = "4747";
+$url  = "/video?1920x1080";
+$fingerprint = false; //rely on defaults
+
+DebugMessage("opening fp");
+if ($fingerprint !== false) {
+	DebugMessage("connect to camera with fingerprint: ". $fingerprint);
+	$context = stream_context_create([
+		'ssl' => [
+			'verify_peer' => false,
+			//'allow_self_signed' => true,
+			//'peer_fingerprint' =>  $fingerprint, //could not make it work so far
+			'verify_peer_name' => false
+		]
+	]);
+	//establish connection to upstream camera with dodgy cert
+	$fp = stream_socket_client("$host:$port", $errno, $errstr, ini_get("default_socket_timeout"), STREAM_CLIENT_CONNECT, $context);
+} else {
+	//establish regular connection to upstream camera
+	$fp = @fsockopen($host, $port, $errno, $errstr, ini_get("default_socket_timeout"));
+}
+if ($fp === false) {
+	DebugMessage("Input failed (FP: ". json_encode($fp).", $errstr)");
+	return false;
+}
+//DebugMessage("FP is ok");
+
+//request upstream camera data to send stream
+$out = "GET $url HTTP/1.1\r\n";
+$out .= "Host: $host\r\n";
+$out .= "\r\n";
+$result = fwrite($fp, $out);
+if($result === false) {
+	DebugMessage("Could not fwrite to upstream camera");
+	return false;
+}
+
+$filename = 'data.jpg';
+fwrite($fs, $out);
+
+$fm = fopen ($filename, "w");
+stream_set_timeout($fs, 30);
+while(!feof($fs) && ($debug = fgets($fs)) != "\r\n" ); // ignore headers
+while(!feof($fs)) {
+$contents = fgets($fs, 4096);
+fwrite($fm, $contents);
+$info = stream_get_meta_data($fs);
+if ($info['timed_out']) {
+  break;
+}
+}
+fclose($fm);
+fclose($fs);
+*/
+/*
+
+          if ($info['timed_out']) {
+            // Delete temp file if fails
+            unlink($temp_file_name);
+            $this->writeDebugInfo("FAILED - Connection timed out: ", $temp_file_name);
+          } else {
+            // Move temp file if succeeds
+            $media_file_name = str_replace('temp/', 'media/', $temp_file_name);
+            rename($temp_file_name, $media_file_name);
+            $this->writeDebugInfo("SUCCESS: ", $media_file_name);
+          }
+*/
+
+//DebugMessage("contacted upstream camera, send $result bytes");
+
+/******************************************************************************
+ * Description.: print a Debug message to stream
+ * Input Value.: $str is the message
+ * $seconds is the duration how long the message is shown
+ * Return Value: -
+ ******************************************************************************/
+function DebugMessage($str, $seconds = 4)
+{
+    //echo $str;
+}
+
+/*
+http://192.168.42.60:4747/cam/1/frame.jpg
+
+  <button type="button" class="btn btn-default" onclick="window.open('/cam/1/frame.jpg', '_blank').focus();">
+      <span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span>&nbsp;Save Photo Here
+  </button>
+*/
+
+    /**
+     * @return false|string
+     */
+    public function getImageFromUpstreamCamera()
+    {
+        $this->debugMessage("----------------------------- getImageFromUpstreamCamera started -------------------");
+        $whileLoopCounter = 0;
+        $boundaryStart = 0;
+        $boundaryEnd = 0;
+        $boundaryIn = null;
+        //filepointer for reading from upstream webcam
+        $fp = false;
+        $startOfImagePosition = 0;
+        $endOfFilePosition = 0;
+        $endOfImagePosition = 0;
+
+        //buffer to keep remainder of previous data chunks
+        $buffer = '';
+
+        //open filepointer to upstream camera if not already open
+        if ($fp === false) {
+            $this->debugMessage("opening fp");
+            /*
+             * if the camera cert is self-signed, maybe you need to ignore TLS certificate details
+             * WARNING: MITM is possible when setting verify... to false
+             *
+             * Documentation is at: https://www.php.net/manual/en/context.ssl.php
+             */
+            if ($this->fingerprint) {
+                $this->debugMessage("connect to camera with fingerprint: " . $this->fingerprint);
+                $context = stream_context_create([
+                    'ssl' => [
+                        'verify_peer' => false,
+                        //'allow_self_signed' => true,
+                        //'peer_fingerprint' =>  $this->fingerprint , //could not make it work so far
+                        'verify_peer_name' => false
+                    ]
+                ]);
+                //establish connection to upstream camera with dodgy cert
+                $fp = stream_socket_client("{$this->host}:{$this->port}", $errno, $errstr, ini_get("default_socket_timeout"), STREAM_CLIENT_CONNECT, $context);
+            } else {
+                //establish regular connection to upstream camera
+                $fp = @fsockopen($this->host, $this->port, $errno, $errstr, ini_get("default_socket_timeout"));
+            }
+
+            if ($fp === false) {
+                $this->debugMessage("Input failed (FP: " . json_encode($fp) . ", $errstr)");
+                return false;
+            }
+
+            $this->debugMessage("FP is ok");
+
+            //request upstream camera data to send stream
+            $out = "GET {$this->url} HTTP/1.1\r\n";
+            $out .= "Host: {$this->host}\r\n";
+            if ($this->auth) {
+                $out .= "Authorization: Basic " . base64_encode($this->auth) . "\r\n";
+            }
+            $out .= "\r\n";
+            $result = fwrite($fp, $out);
+            if ($result === false) {
+                $this->debugMessage("Could not fwrite to upstream camera");
+                return false;
+            }
+            $this->debugMessage("Contacted upstream camera, send $result bytes.");
+        }
+
+        $this->debugMessage("Begin read data from upstream camera and return single picture.");
+
+        // Read data from upstream camera, to extract and return single picture:
+        while (!feof($fp)) {
+            $whileLoopCounter++;
+            $buffer .= fgets($fp);
+            $part = $buffer;
+
+            // learn boundary string
+            if (!$boundaryIn) {
+                $boundaryStart = strpos($buffer, self::BOUNDARY_START_DEFINITION_STRING);
+
+                if (!$boundaryStart) {
+                    $this->debugMessage("$whileLoopCounter) boundaryStart not found.");
+                    continue;
+                }
+
+                $boundaryStart = $boundaryStart + strlen(self::BOUNDARY_START_DEFINITION_STRING);
+                $boundaryEnd = strpos($buffer, "\r\n", $boundaryStart);
+
+                if ($boundaryEnd === false) {
+                    $this->debugMessage("$whileLoopCounter) boundaryEnd is false.");
+                    continue;
+                }
+
+                if ($boundaryStart >= $boundaryEnd) {
+                    $this->debugMessage("$whileLoopCounter) boundaryStart >= boundaryEnd.");
+                    continue;
+                }
+
+                $boundaryIn = substr($buffer, $boundaryStart, $boundaryEnd - $boundaryStart);
+
+                $this->debugMessage("$whileLoopCounter) found boundary $boundaryIn");
+            }
+
+            $startOfImagePosition = strpos($buffer, self::SOI);
+            $endOfFilePosition = strpos($buffer, self::END_OF_FILE);
+            $endOfImagePosition = strpos($buffer, self::EOI);
+
+            if ($startOfImagePosition > 0 && $endOfImagePosition > 0) {
+                $this->debugMessage("Detected start of image file position $startOfImagePosition and end of image position $endOfImagePosition.");
+                return substr($buffer, $startOfImagePosition, $endOfImagePosition - $startOfImagePosition);
+            }
+
+            $this->debugMessage("$whileLoopCounter) boundaryIn=$boundaryIn; boundaryStart=$boundaryStart; boundaryEnd=$boundaryEnd; startOfImagePosition=$startOfImagePosition; endOfFilePosition=$endOfFilePosition; endOfImagePosition=$endOfImagePosition.");
+
+            // Extract single JPEG frame, alternatively we could also search EOI, SOI markers:
+            $part = substr($part, strpos($part, "--$boundaryIn") + strlen("--$boundaryIn"));
+            $part = trim(substr($part, strpos($part, "\r\n\r\n")));
+            $part = substr($part, 0, strpos($part, "--$boundaryIn"));
+
+            // To avoid infinite loop, interrupt:
+            if ($whileLoopCounter > 2000) {
+                $this->debugMessage("$whileLoopCounter) Infinite loop protection invoked.");
+                return false;
+            }
+
+            //substr returns an empty string if the string could not be extracted
+            //an image should not be smaller than this, so skip if too small
+            if (strlen($part) <= 100) {
+                continue;
+            }
+
+            //shorten/maintain the buffer
+            $buffer = substr($buffer, strpos($buffer, $part) + strlen($part));
+
+            //return a single image
+            return $part;
+        }
+
+        return false;
+    }
+
+php -r '
+const SOI = "\xFF\xD8"; // Start of image
+const EOI = "\xFF\xD9"; // End of image
+$testString = "This " . SOI . " is some test string".EOI.".";
+$startPosition = strpos($testString, SOI);
+$endPosition = strpos($testString, EOI);
+$newString = substr($testString, $startPosition, $endPosition - $startPosition + strlen(EOI));
+
+echo "testString: $testString\n";
+echo "startPosition: $startPosition\n";
+echo "endPosition : $endPosition\n";
+echo "newString : |$newString|\n";
+'
+
+
+            //substr returns an empty string if the string could not be extracted
+            //an image should not be smaller than this, so skip if too small
+            if (strlen($part) <= 100) {
+                continue;
+            }
+
+            //shorten/maintain the buffer
+            $buffer = substr($buffer, strpos($buffer, $part) + strlen($part));
+
+            //return a single image
+            return $part;
+
+            $this->debugMessage("$whileLoopCounter) boundaryIn=$boundaryIn; boundaryStart=$boundaryStart; boundaryEnd=$boundaryEnd; startOfImagePosition=$startOfImagePosition; endOfFilePosition=$endOfFilePosition; endOfImagePosition=$endOfImagePosition.");
+
+            // Extract single JPEG frame, alternatively we could also search EOI, SOI markers:
+            $part = substr($part, strpos($part, "--$boundaryIn") + strlen("--$boundaryIn"));
+            $part = trim(substr($part, strpos($part, "\r\n\r\n")));
+            $part = substr($part, 0, strpos($part, "--$boundaryIn"));
+
+            $endOfFilePosition = strpos($buffer, self::END_OF_FILE);
+
+        // learn boundary string
+            if (!$boundaryIn) {
+                $boundaryStart = strpos($buffer, self::BOUNDARY_START_DEFINITION_STRING);
+
+                if (!$boundaryStart) {
+                    $this->debugMessage("$whileLoopCounter) boundaryStart not found.");
+                    continue;
+                }
+
+                $boundaryStart = $boundaryStart + strlen(self::BOUNDARY_START_DEFINITION_STRING);
+                $boundaryEnd = strpos($buffer, "\r\n", $boundaryStart);
+
+                if ($boundaryEnd === false) {
+                    $this->debugMessage("$whileLoopCounter) boundaryEnd is false.");
+                    continue;
+                }
+
+                if ($boundaryStart >= $boundaryEnd) {
+                    $this->debugMessage("$whileLoopCounter) boundaryStart >= boundaryEnd.");
+                    continue;
+                }
+
+                $boundaryIn = substr($buffer, $boundaryStart, $boundaryEnd - $boundaryStart);
+
+                $this->debugMessage("$whileLoopCounter) found boundary $boundaryIn");
+            }
+
+    /**
+     * Load a JPEG from a stream.
+     *
+     * @param resource $fileHandle
+     * @param string $filename
+     *
+     * @return mixed
+     * @throws \Exception
+     */
+    public function fromStream($fileHandle, $filename = null)
+    {
+        try {
+            // Read the first two characters
+            $data = fread($fileHandle, 2);
+
+            // Check that the first two characters are 0xFF 0xDA (SOI - Start of image)
+            if ($data !== self::SOI) {
+                throw new \Exception('Could not find SOI, invalid JPEG file.');
+            }
+
+            // Read the next two characters
+            $data = fread($fileHandle, 2);
+
+            // Check that the third character is 0xFF (Start of first segment header)
+            if ($data[0] != "\xFF") {
+                throw new \Exception('No start of segment header character, JPEG probably corrupted.');
+            }
+
+            $segments = [];
+            $imageData = null;
+
+            // Cycle through the file until, either an EOI (End of image) marker is hit or end of file is hit
+            while (($data[1] != "\xD9") && (!feof($fileHandle))) {
+                // Found a segment to look at.
+                // Check that the segment marker is not a restart marker, restart markers don't have size or data
+                if ((ord($data[1]) < 0xD0) || (ord($data[1]) > 0xD7)) {
+                    $decodedSize = unpack('nsize', fread($fileHandle, 2)); // find segment size
+
+                    $segmentStart = ftell($fileHandle); // segment start position
+                    $segmentData = fread($fileHandle, $decodedSize['size'] - 2); // read segment data
+                    $segmentType = ord($data[1]);
+
+                    $segments[] = new JpegSegment($segmentType, $segmentStart, $segmentData);
+                }
+
+                // If this is a SOS (Start Of Scan) segment, then there is no more header data, the image data follows
+                if ($data[1] == "\xDA") {
+                    // read the rest of the file, reading 1mb at a time until EOF
+                    $compressedData = '';
+                    do {
+                        $compressedData .= fread($fileHandle, 1048576);
+                    } while (!feof($fileHandle));
+
+                    // Strip off EOI and anything after
+                    $eoiPos = strpos($compressedData, "\xFF\xD9");
+                    $imageData = substr($compressedData, 0, $eoiPos);
+
+                    break; // exit loop as no more headers available.
+                } else {
+                    // Not an SOS - Read the next two bytes - should be the segment marker for the next segment
+                    $data = fread($fileHandle, 2);
+
+                    // Check that the first byte of the two is 0xFF as it should be for a marker
+                    if ($data[0] != "\xFF") {
+                        throw new \Exception('No FF found, JPEG probably corrupted.');
+                    }
+                }
+            }
+
+            //return new self($imageData, $segments, $filename);
+            return $imageData;
+
+        } finally {
+            fclose($fileHandle);
+        }
+
+        return false;
+    }
+
+// https://gist.github.com/megasaturnv/81279fca49f2f34b42e77815c9bb1eb8
