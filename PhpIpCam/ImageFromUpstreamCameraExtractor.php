@@ -2,6 +2,8 @@
 
 namespace PhpIpCam;
 
+use DateTime;
+
 class ImageFromUpstreamCameraExtractor
 {
     private const BOUNDARY_START_DEFINITION_STRING = 'Content-Type: multipart/x-mixed-replace;boundary=';
@@ -38,6 +40,9 @@ class ImageFromUpstreamCameraExtractor
         $boundaryIn = null;
         //filepointer for reading from upstream webcam
         $fp = false;
+        $startOfImagePosition = 0;
+        $endOfFilePosition = 0;
+        $endOfImagePosition = 0;
 
         //buffer to keep remainder of previous data chunks
         $buffer = '';
@@ -147,6 +152,12 @@ class ImageFromUpstreamCameraExtractor
             $startOfImagePosition = strpos($buffer, self::SOI);
             $endOfFilePosition = strpos($buffer, self::END_OF_FILE);
             $endOfImagePosition = strpos($buffer, self::EOI);
+
+            if ($startOfImagePosition > 0 && $endOfImagePosition > 0) {
+                $this->debugMessage("Detected start of image file position $startOfImagePosition and end of image position $endOfImagePosition.");
+                return substr($buffer, $startOfImagePosition, $endOfImagePosition - $startOfImagePosition);
+                //substr($compressedData, 0, $eoiPos);
+            }
 
 //            // Note our use of ===.  Simply == would not work as expected
 //            // because the position of 'a' was the 0th (first) character.
@@ -274,7 +285,7 @@ class ImageFromUpstreamCameraExtractor
     private function debugMessage(string $string): void
     {
         $this->lastDebugMessage = $string;
-        file_put_contents("php://stdout", "\n$string");
+        file_put_contents("php://stdout", "\n" . date_format(new DateTime(), 'Y-m-d H:i:s') . " $string");
     }
 }
 // https://gist.github.com/megasaturnv/81279fca49f2f34b42e77815c9bb1eb8
