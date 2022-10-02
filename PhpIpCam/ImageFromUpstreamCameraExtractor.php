@@ -5,7 +5,9 @@ namespace PhpIpCam;
 class ImageFromUpstreamCameraExtractor
 {
     private const BOUNDARY_START_DEFINITION_STRING = 'Content-Type: multipart/x-mixed-replace;boundary=';
-    private const SOI = "\xFF\xD8";
+    private const SOI = "\xFF\xD8"; // Start of image
+    private const EOI = "\xFF\xD9"; // End of image
+    private const END_OF_FILE = "\xD9";
 
     private string $host;
     private int $port;
@@ -142,19 +144,21 @@ class ImageFromUpstreamCameraExtractor
             }
             */
 
-            $pos = strpos($buffer, self::SOI);
+            $startOfImagePosition = strpos($buffer, self::SOI);
+            $endOfFilePosition = strpos($buffer, self::END_OF_FILE);
+            $endOfImagePosition = strpos($buffer, self::EOI);
 
-            // Note our use of ===.  Simply == would not work as expected
-            // because the position of 'a' was the 0th (first) character.
-            if ($pos === false) {
-                //echo "The string '$findme' was not found in the string '$mystring'";
-            } else {
-                //echo "The string '$findme' was found in the string '$mystring'";
-                //echo " and exists at position $pos";
-                $this->debugMessage("$whileLoopCounter) found " . self::SOI . " position: $pos.");
-            }
+//            // Note our use of ===.  Simply == would not work as expected
+//            // because the position of 'a' was the 0th (first) character.
+//            if ($pos === false) {
+//                //echo "The string '$findme' was not found in the string '$mystring'";
+//            } else {
+//                //echo "The string '$findme' was found in the string '$mystring'";
+//                //echo " and exists at position $pos";
+//                $this->debugMessage("$whileLoopCounter) found " . self::SOI . " position: $pos.");
+//            }
 
-            //$this->debugMessage("$whileLoopCounter) boundaryIn=$boundaryIn; boundaryStart=$boundaryStart; boundaryEnd=$boundaryEnd.");
+            $this->debugMessage("$whileLoopCounter) boundaryIn=$boundaryIn; boundaryStart=$boundaryStart; boundaryEnd=$boundaryEnd; startOfImagePosition=$startOfImagePosition; endOfFilePosition=$endOfFilePosition; endOfImagePosition=$endOfImagePosition.");
 
             // Extract single JPEG frame, alternatively we could also search EOI, SOI markers:
             $part = substr($part, strpos($part, "--$boundaryIn") + strlen("--$boundaryIn"));
