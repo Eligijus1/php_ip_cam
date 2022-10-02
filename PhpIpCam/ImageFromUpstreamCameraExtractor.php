@@ -142,7 +142,19 @@ class ImageFromUpstreamCameraExtractor
             }
             */
 
-            $this->debugMessage("$whileLoopCounter) boundaryIn=$boundaryIn; boundaryStart=$boundaryStart; boundaryEnd=$boundaryEnd.");
+            $pos = strpos($buffer, self::SOI);
+
+            // Note our use of ===.  Simply == would not work as expected
+            // because the position of 'a' was the 0th (first) character.
+            if ($pos === false) {
+                //echo "The string '$findme' was not found in the string '$mystring'";
+            } else {
+                //echo "The string '$findme' was found in the string '$mystring'";
+                //echo " and exists at position $pos";
+                $this->debugMessage("$whileLoopCounter) found " . self::SOI . " position: $pos.");
+            }
+
+            //$this->debugMessage("$whileLoopCounter) boundaryIn=$boundaryIn; boundaryStart=$boundaryStart; boundaryEnd=$boundaryEnd.");
 
             // Extract single JPEG frame, alternatively we could also search EOI, SOI markers:
             $part = substr($part, strpos($part, "--$boundaryIn") + strlen("--$boundaryIn"));
@@ -175,7 +187,7 @@ class ImageFromUpstreamCameraExtractor
      * Load a JPEG from a stream.
      *
      * @param resource $fileHandle
-     * @param string   $filename
+     * @param string $filename
      *
      * @return mixed
      * @throws \Exception
