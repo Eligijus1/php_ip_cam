@@ -2,8 +2,6 @@
 
 namespace PhpIpCam;
 
-use DateTime;
-
 class ImageFromUpstreamCameraExtractor
 {
     private const BOUNDARY_START_DEFINITION_STRING = 'Content-Type: multipart/x-mixed-replace;boundary=';
@@ -17,14 +15,16 @@ class ImageFromUpstreamCameraExtractor
     private string $url;
     private ?string $auth;
     private ?string $fingerprint;
+    private Helper $helper;
 
-    public function __construct(string $host, int $port, string $url, ?string $auth, ?string $fingerprint)
+    public function __construct(string $host, int $port, string $url, ?string $auth, ?string $fingerprint, Helper $helper)
     {
         $this->host = $host;
         $this->port = $port;
         $this->url = $url;
         $this->auth = $auth;
         $this->fingerprint = $fingerprint;
+        $this->helper = $helper;
     }
 
     /**
@@ -32,12 +32,12 @@ class ImageFromUpstreamCameraExtractor
      */
     public function getImageFromUpstreamCamera()
     {
-        $this->debugMessage("----------------------------- getImageFromUpstreamCamera started -------------------");
+        $this->helper->debugMessage("----------------------------- getImageFromUpstreamCamera started -------------------");
         $whileLoopCounter = 0;
         $boundaryStart = 0;
         $boundaryEnd = 0;
         $boundaryIn = null;
-        //filepointer for reading from upstream webcam
+        //file pointer for reading from upstream webcam
         $fp = false;
         $startOfImagePosition = 0;
         $endOfFilePosition = 0;
@@ -48,7 +48,7 @@ class ImageFromUpstreamCameraExtractor
 
         //open filepointer to upstream camera if not already open
         if ($fp === false) {
-            $this->debugMessage("opening fp");
+            $this->helper->debugMessage("opening fp");
             /*
              * if the camera cert is self-signed, maybe you need to ignore TLS certificate details
              * WARNING: MITM is possible when setting verify... to false
@@ -56,7 +56,7 @@ class ImageFromUpstreamCameraExtractor
              * Documentation is at: https://www.php.net/manual/en/context.ssl.php
              */
             if ($this->fingerprint) {
-                $this->debugMessage("connect to camera with fingerprint: " . $this->fingerprint);
+                $this->helper->debugMessage("connect to camera with fingerprint: " . $this->fingerprint);
                 $context = stream_context_create([
                     'ssl' => [
                         'verify_peer' => false,
@@ -73,11 +73,11 @@ class ImageFromUpstreamCameraExtractor
             }
 
             if ($fp === false) {
-                $this->debugMessage("Input failed (FP: " . json_encode($fp) . ", $errstr)");
+                $this->helper->debugMessage("Input failed (FP: " . json_encode($fp) . ", $errstr)");
                 return false;
             }
 
-            $this->debugMessage("FP is ok");
+            $this->helper->debugMessage("FP is ok");
 
             // Request upstream camera data to send stream:
             $out = "GET {$this->url} HTTP/1.1\r\n";
@@ -88,13 +88,13 @@ class ImageFromUpstreamCameraExtractor
             $out .= "\r\n";
             $result = fwrite($fp, $out);
             if ($result === false) {
-                $this->debugMessage("Could not fwrite to upstream camera");
+                $this->helper->debugMessage("Could not fwrite to upstream camera");
                 return false;
             }
-            $this->debugMessage("Contacted upstream camera, send $result bytes.");
+            $this->helper->debugMessage("Contacted upstream camera, send $result bytes.");
         }
 
-        $this->debugMessage("Begin read data from upstream camera and return single picture.");
+        $this->helper->debugMessage("Begin read data from upstream camera and return single picture.");
 
         // Read data from upstream camera, to extract and return single picture:
         while (!feof($fp)) {
@@ -105,27 +105,17 @@ class ImageFromUpstreamCameraExtractor
             $endOfImagePosition = strpos($buffer, self::EOI);
 
             if ($startOfImagePosition > 0 && $endOfImagePosition > 0 && $endOfImagePosition > $startOfImagePosition) {
-                $this->debugMessage("$whileLoopCounter) Detected start of image file position $startOfImagePosition and end of image position $endOfImagePosition.");
+                $this->helper->debugMessage("$whileLoopCounter) Detected start of image file position $startOfImagePosition and end of image position $endOfImagePosition.");
                 return substr($buffer, $startOfImagePosition, $endOfImagePosition - $startOfImagePosition + strlen(self::EOI));
             }
 
             // To avoid infinite loop, interrupt:
             if ($whileLoopCounter > self::INFINITE_LOOP_INTERRUPT) {
-                $this->debugMessage("$whileLoopCounter) Infinite loop protection invoked.");
+                $this->helper->debugMessage("$whileLoopCounter) Infinite loop protection invoked.");
                 return false;
             }
         }
 
         return false;
-    }
-
-    /**
-     * @param string $string
-     *
-     * @return void
-     */
-    private function debugMessage(string $string): void
-    {
-        file_put_contents("php://stdout", "\n" . date_format(new DateTime(), 'Y-m-d H:i:s') . " $string");
     }
 }
