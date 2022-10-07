@@ -448,3 +448,13 @@ echo "newString : |$newString|\n";
     }
 
 // https://gist.github.com/megasaturnv/81279fca49f2f34b42e77815c9bb1eb8
+
+/*
+Sometimes you need to calculate or track the memory used by your running script.
+The memory_get_usage() function has a boolean parameter. The default is false. With the
+default value (false), you can get the number of bytes used by your script. With the
+parameter set to true you get the bytes pre-allocated for memory pages.
+$mem = memory_get_usage();
+$mem = memory_get_usage(true);
+*/
+
