@@ -1,35 +1,21 @@
 <?php
-//// Create a blank image and add some text
-//$im = imagecreatetruecolor(120, 20);
-//$text_color = imagecolorallocate($im, 233, 14, 91);
-//imagestring($im, 1, 5, 5,  'A Simple Text String', $text_color);
-//
-//// Set the content type header - in this case image/jpeg
-//header('Content-Type: image/jpeg');
-//
-//// Output the image
-//imagejpeg($im);
-//
-//// Free up memory
-//imagedestroy($im);
-
 $boundaryOut = "MyMultipartBoundaryDoNotStumble";
 $seconds = 5;
 
-for ($i = 0; $i < $seconds * 5; $i++) {
-//    ob_start();
-//    $im = imagecreatetruecolor(120, 20);
-//    $text_color = imagecolorallocate($im, 233, 14, 91);
-//    imagestring($im, 1, 5, 5, 'A Simple Text String ' . $i, $text_color);
-//    imagejpeg($im);
-//    $imageData = ob_get_contents();
-//    imagedestroy($im);
-//    ob_end_clean();
-    $imageData = TextToImage('A Simple Text String ' . $i);
-    OutputImage($imageData);
-    //imagedestroy($im);
-    usleep(200 * 1000);
-}
+$i = 0;
+$im = imagecreatetruecolor(120, 20);
+$text_color = imagecolorallocate($im, 233, 14, 91);
+imagestring($im, 1, 5, 5, 'A Simple Text String ' . $i, $text_color);
+imagejpeg($im);
+imagedestroy($im);
+
+//for ($i = 0; $i < $seconds * 5; $i++) {
+//
+//    $imageData = TextToImage('A Simple Text String ' . $i);
+//    //OutputImage($imageData);
+//    //imagedestroy($im);
+//    usleep(200 * 1000);
+//}
 
 /******************************************************************************
  * Description.: Output image to stream
