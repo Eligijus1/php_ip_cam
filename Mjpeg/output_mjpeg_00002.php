@@ -38,7 +38,7 @@ while (true) {
     # Per-image header, note the two new-lines
     print "Content-type: image/jpeg\n\n";
 
-    # Your function to get one jpeg image
+    # Make image:
     $im = imagecreatetruecolor(1920, 1080);
     $text_color = imagecolorallocate($im, 233, 14, 91);
     imagestring($im, 0, 5, 5, date_format(new DateTime(), 'Y-m-d H:i:s') . ' A Simple Text String ' . $i, $text_color);
@@ -47,6 +47,8 @@ while (true) {
 
     # The separator
     print "--$boundary\n";
+
+    // 1-second sleep:
     //usleep(2 * 1000);
     sleep(1);
 }
