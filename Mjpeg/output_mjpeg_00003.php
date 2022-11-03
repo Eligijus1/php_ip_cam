@@ -54,7 +54,4 @@ while (true) {
 
     # The separator
     print "--$boundary\n";
-
-    // 1-second sleep:
-    //sleep(1);
 }
