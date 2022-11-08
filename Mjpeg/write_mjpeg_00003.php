@@ -7,6 +7,7 @@ use PhpIpCam\Helper;
 use PhpIpCam\JpegImageMaker;
 use PhpIpCam\SharedMemoryManager;
 
+$startProgramHighResolutionTime = hrtime(true);
 $helper = new Helper();
 $jpegImageMaker = new JpegImageMaker();
 $sharedMemoryManager = new SharedMemoryManager();
@@ -17,7 +18,11 @@ $helper->message("DEBUG", "JPEG generator stared.");
 while (true) {
     $i++;
 
-    $sharedMemoryManager->putDataToSharedMemory($jpegImageMaker->getImageWithSimpleText(date_format(new DateTime(), 'Y-m-d H:i:s') . ' A Simple Test 8 Text String ' . $i));
+    try {
+        $sharedMemoryManager->putDataToSharedMemory($jpegImageMaker->getImageWithSimpleText(date_format(new DateTime(), 'Y-m-d H:i:s') . ' A Simple Test 8 Text String ' . $i));
+    } catch (Exception $ex) {
+        $helper->message("ERROR", $ex->getMessage());
+    }
 
     if ($i > 100) {
         echo PHP_EOL;
@@ -25,4 +30,5 @@ while (true) {
     }
 }
 
-$helper->message("DEBUG", "$i JPEG generator iterations finished.");
+$executionTime = $helper->getHighResolutionTimeEtaInMilliseconds($startProgramHighResolutionTime, hrtime(true));
+$helper->message("DEBUG", "$i JPEG generator iterations finished. Program execution time in milliseconds: $executionTime.");
