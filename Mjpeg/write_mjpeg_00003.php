@@ -9,11 +9,12 @@ use PhpIpCam\SharedMemoryManager;
 
 $startProgramHighResolutionTime = hrtime(true);
 $helper = new Helper();
-$jpegImageMaker = new JpegImageMaker();
+$fontPath = realpath('.') . DIRECTORY_SEPARATOR . 'Font';
+$jpegImageMaker = new JpegImageMaker($fontPath);
 $sharedMemoryManager = new SharedMemoryManager();
 $i = 0;
 
-$helper->message("DEBUG", "JPEG generator stared.");
+$helper->message("DEBUG", "JPEG generator stared. Font path: $fontPath.");
 
 while (true) {
     $i++;
