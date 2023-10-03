@@ -1,4 +1,4 @@
-<?php
+<?php // Old index.php
 require_once('PhpIpCam/Helper.php');
 require_once('PhpIpCam/JpegSegment.php');
 require_once('PhpIpCam/ImageFromUpstreamCameraExtractor.php');
