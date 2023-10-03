@@ -1,4 +1,5 @@
 <?php
+// Using this script for testing
 // Convert a pathname and a project identifier to a System V IPC key:
 //$key = ftok(__FILE__, 'a');
 $key = ftok(realpath(dirname(__FILE__)) . '/index.php', 'a');
