@@ -1,2 +1,2 @@
-# php_ip_cam
+# PHP IP Cam
 Experiments with PHP &amp; IP camera
